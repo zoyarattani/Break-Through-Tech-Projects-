@@ -1,0 +1,150 @@
+# The code cell below contains the logistic regression class that we are building. Your task is to complete the logic within each specified method. Remember, a method is just a function that belongs to that particular class.
+# Below is a breakdown of the methods contained in the class:
+# An __init__() method that takes in an error tolerance as a stopping criterion, as well as max number of iterations.
+# A predict_proba() method that takes a given matrix of features 𝑋 and predicts 𝑃=11+𝑒−(𝑋⋅𝑊+𝛼) for each entry
+# A compute_gradient() method that computes the gradient vector 𝐺
+# A compute_hessian() method that computes the Hessian. Note that the 𝐻 can be broken down to the following matrix multiplications: 𝐻=(𝑋𝑇∗𝑄)⋅𝑋.
+# An update_weights() method that applies gradient descent to update the weights
+# A check_stop() method that checks whether the model has converged or the max iterations have been met
+# A fit() method that trains the model. It takes in the data and runs the gradient optimization
+# Part 1. Complete the Class
+# Task: Follow the steps below to complete the code in the LogisticRegressionScratch class.
+# Step A:
+# Complete the self.predict_proba() method. (Note: This implementation looks a little bit different from the formula you have seen previously. This is simply because we will absorb the intercept term into our X matrix). Do the following:
+# Create a variable XW. Assign it the result of the dot product of the input X and self.weights_array variable
+# Create a variable P. Assign it the result of the inverse logit  (1+𝑒−𝑋𝑊)−1
+# Make sure the method returns the variable P (the return statement has been provided for you).
+# Step B:
+# Complete the self.compute_gradient() method. This is where we implement the log loss gradient. Do the following:
+# Create a variable G. Assign it the result of the gradient computation  −(𝑦−𝑃)⋅𝑋
+# Make sure the method returns the variable G (the return statement has been provided for you).
+# Step C:
+# Complete the self.compute_hessian() method. This is where we implement the log loss Hessian. Do the following:
+# Create a variable Q. Assign it the result of the following computation  𝑃∗(1−𝑃)
+# Create a variable XQ. Assign it the result of the following computation  𝑋𝑇∗𝑄. Note that 𝑋 is the input to the method and this is using regular multiplication
+# Create a variable called H. Assign it the result of the following computation  𝑋𝑄⋅𝑋. Note that this operation is using the dot product for matrix multiplication
+# Make sure the method returns the variable H (the return statement has been provided for you).
+# Step D
+# Complete the self.update_weights() method. This is where we implement the gradient descent update. Do the following:
+# Create a variable P. Call the self.predict_proba() method to get predictions and assign the result to variable P. Note, when calling a method from within the class you need to call it using self.predict_proba().
+# Create a variable G. Call the self.compute_gradient() method and assign the result to variable G.
+# Create a variable H. Call the self.compute_hessian() method to get the Hessian and assign the result to variable H.
+# Assign the self.weights_array variable to the self.prior_w variable. By doing so, the current weight values become the previous weight values.
+# Compute the gradient update-step, which is governed by  𝑤𝑡=𝑤𝑡−1−𝐻−1⋅𝐺, where 𝑤𝑡 and 𝑤𝑡−1 are both the variable self.weights_array(You are updating the current weights and therefore want to update the values in self.weights_array). Hint: to implement the part  𝐻−1⋅𝐺, use NumPy's np.linalg.inv() function and dot() method.
+# Note: this method does not return any value.
+# Step E
+# Complete the self.check_stop() method. This is where we implement the stopping criteria. Do the following:
+# Create a variable called w_old_norm. Normalize self.prior_w. You normalize a vector v using the following formula 𝑣/‖𝑣‖ where ‖𝑣‖ can be computed using the function np.linalg.norm(v). Assign this result to the variable w_old_norm.
+# Create a variable called w_new_norm. Normalize self.weights_array following the same approach. Assign the result to the variable w_new_norm.
+# Create a variable called diff and assign it the value w_old_norm-w_new_norm.
+# Create a variable called distance. Compute  𝑑⋅𝑑⎯⎯⎯⎯⎯⎯⎯√where 𝑑 is the variable diff created in the step above. Note that this uses the dot product.
+# Create a boolean variable called stop. Check whether distance is less than self.tolerance. If so, assign True to the variable stop. If not, assign False to the variable stop.
+# Make sure the method returns the variable stop (the return statement has been provided for you).
+
+import numpy as np
+
+class LogisticRegressionScratch:
+    def __init__(self, tolerance=1e-4, max_iter=1000):
+        self.tolerance = tolerance
+        self.max_iter = max_iter
+        self.weights_array = None
+        self.prior_w = None
+    
+    def predict_proba(self, X):
+        XW = np.dot(X, self.weights_array)
+        P = 1 / (1 + np.exp(-XW))
+        
+        return P
+    
+    def compute_gradient(self, X, y):
+        P = self.predict_proba(X)
+        
+        G = -np.dot((y - P), X)
+        
+        return G
+    
+    def compute_hessian(self, X):
+        P = self.predict_proba(X)
+        
+        Q = P * (1 - P)
+        XQ = np.dot(X.T, Q)
+        
+        H = np.dot(XQ, X)
+        
+        return H
+    
+    def update_weights(self, X, y):
+        P = self.predict_proba(X)
+        G = self.compute_gradient(X, y)
+        H = self.compute_hessian(X)
+        self.prior_w = self.weights_array
+        self.weights_array = self.weights_array - np.dot(np.linalg.inv(H), G)
+    
+    def check_stop(self):
+        w_old_norm = self.prior_w / np.linalg.norm(self.prior_w)
+        w_new_norm = self.weights_array / np.linalg.norm(self.weights_array)
+        diff = w_old_norm - w_new_norm
+        distance = np.sqrt(np.dot(diff, diff))
+        stop = distance < self.tolerance
+        
+        return stop
+    
+    def fit(self, X, y) 
+        self.weights_array = np.zeros(X.shape[1])
+        for _ in range(self.max_iter):
+            self.update_weights(X, y)
+            if self.check_stop():
+                break
+
+# Load a Data Set and Save it as a Pandas DataFrame
+# We will work with the data set airbnbData_train. This data set already has all the necessary preprocessing steps implemented, including one-hot encoding of the categorical variables, scaling of all numerical variable values, and imputing missing values.
+# filename = os.path.join(os.getcwd(), "data", "airbnbData_train.csv")
+# Task: Load the data and save it to DataFrame df.
+
+import pandas as pd
+import os
+filename = os.path.join(os.getcwd(), "data", "airbnbData_train.csv")
+df = pd.read_csv(filename)
+print(df.head())
+
+# We have chosen to train the model on a subset of features that can help make with our predictive problem, that is, they can help predict with the host is a super host. Run the following cell to see the list of features.
+# feature_list = ['review_scores_rating','review_scores_cleanliness','review_scores_checkin','review_scores_communication','review_scores_value','host_response_rate','host_acceptance_rate']
+# feature_list
+# b. Create Labeled Examples from the Data Set
+# Task: Our data is ready for modeling. Obtain the feature columns from DataFrame df and assign to X. Obtain the label column from DataFrame df and assign to y.
+
+feature_list = ['review_scores_rating', 'review_scores_cleanliness', 
+                'review_scores_checkin', 'review_scores_communication', 
+                'review_scores_value', 'host_response_rate', 'host_acceptance_rate']
+X = df[feature_list]
+y = df['superhost'] 
+print("Selected Feature List:")
+print(feature_list)
+
+# Now that we have our labeled examples, let's test out our logistic regression class. Note: We will not be splitting our data intro training and test data sets
+# Task: In the code cell below, do the following:
+# Create an instance of LogisticRegressionScratch() using default parameters (i.e. do not supply any arguments). Name this instance lr.
+# Fit the model lr to the training data by calling lr.fit() with X and y as arguments.
+
+lr = LogisticRegressionScratch()
+lr.fit(X, y)
+
+# Now let's compare our logistic regression implementation with the sklearn logistic regression implementation. Note that by default scikit-learn uses a different optimization technique. However, our goal is to compare our resulting weights and intercept with those of scikit-learn's implementation, and these should be the same.
+# Task: In the code cell below, write code to does the following:
+# Create the scikit-learn LogisticRegression model object below and assign to variable lr_sk. Use C=10**10 as the argument to LogisticRegression().
+# Fit the model lr_sk to the training data by calling lr_sk.fit() with X and y as arguments.
+
+from sklearn.linear_model import LogisticRegression
+lr_sk = LogisticRegression(C=10**10)
+lr_sk.fit(X, y)
+
+#Let's also check the efficiency (or run time) of both methods. We will use the magic function %timeit to do this
+# Task: Use the %timeit magic function to fit the logistic regression model lr on the training data. Hint: use %timeit on lr.fit(X, y).
+
+%timeit lr.fit(X, y)
+
+# Use the %timeit magic function to fit the logistic regression model lr_sk on the training data. Take a look and see which one is faster.
+
+%timeit lr_sk.fit(X, y)
+
+
